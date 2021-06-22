@@ -1,93 +1,79 @@
-import React from 'react';
-import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
-import {FlatList, ActivityIndicator} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {useDispatch, useSelector} from 'react-redux';
+import {FlatList, ActivityIndicator, View, Text, Alert} from 'react-native';
 import * as PokeActions from '../../store/modules/pokedex/actions';
 import PokeCard from '../../components/PokeCard';
 import {Container, SizeButton, SizeIcon, SizeText} from './styles';
 import api from '../../services/api';
 
-class Home extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      list: [],
-      offset: 0,
-    };
+const Home = ({navigation}) =>  {
+
+  const [list, setList] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const dispatch = useDispatch();
+  const pokedex = useSelector((state) => state.pokedex)
+
+  useEffect(() => {
+    getPokemons();
+  }, []);
+
+  function handleAddPokemon(pokemon) {
+    const {actionAddPokemon} = PokeActions;
+    dispatch(actionAddPokemon(pokemon));
   }
 
-  async componentDidMount() {
-    this.getPokemons();
-  }
-
-  async getPokemons() {
-    const {offset, list} = this.state;
+  async function getPokemons() {
     try {
       const response = await api.get(`/pokemon?limit=20&offset=${offset}`);
       if (offset > 0) {
-        this.setState({
-          list: [...list, response.data.results],
-          offset: offset + 20,
-        });
+        setList(...list, response.data.results);
+        setOffset(offset + 20);
       } else {
-        this.setState({list: response.data.results, offset: offset + 20});
+        setList(response.data.results);
       }
     } catch (error) {
-      console.log('error => ', error);
+      Alert.alert(
+        "Desculpe,",
+        "Não conseguimos buscar a lista de pokemons, por favor, tente mais tarde.",
+        [
+          {
+            text: "Cancelar", onPress: () => {}, style: "cancel"
+          },
+          { text: "OK", onPress: () => {}}
+        ]
+      );
     }
   }
 
-  handleAddPokemon(pokemon) {
-    const {actionAddPokemon} = this.props;
-    actionAddPokemon(pokemon);
-  }
-
-  render() {
-    const {list} = this.state;
-    const {navigation, size} = this.props;
-    return (
-      <Container>
-        {list.length > 0 ? (
-          <>
-            <SizeButton onPress={() => navigation.navigate('pokelist')}>
-              <SizeIcon name="shopping-cart" />
-              <SizeText>{size}</SizeText>
-            </SizeButton>
-            <FlatList
-              onEndReached={() => {}}
-              onEndReachedThreshold={1}
-              showsVerticalScrollIndicator={false}
-              numColumns={2}
-              data={list}
-              renderItem={(item) => (
-                <PokeCard
-                  goToDetails={() => {
-                    navigation.navigate('details', {
-                      pokemon: item.item,
-                    });
-                  }}
-                  addPokemon={(pokemon) => this.handleAddPokemon(pokemon.item)}
-                  pokemon={item}
-                />
-              )}
-              keyExtractor={(item, index) => index}
-            />
-          </>
-        ) : (
+  return (
+    <Container>
+      {list.length > 0 ? (
+        <>
+          <SizeButton onPress={() => navigation.navigate('pokelist')}>
+            <SizeIcon name="shopping-cart" />
+            <SizeText>{pokedex.length}</SizeText>
+          </SizeButton>
+          <FlatList
+            onEndReached={() => { /* acrescentar loading e buscar mais pokemons */ }}
+            onEndReachedThreshold={1}
+            showsVerticalScrollIndicator={false}
+            numColumns={2}
+            data={list}
+            renderItem={(item) => (
+              <PokeCard
+                goToDetails={() => navigation.navigate('details', { pokemonParam: item.item, }) }
+                addPokemon={(pokemon) => handleAddPokemon(pokemon.item)}
+                pokemon={item}
+              />
+            )}
+            keyExtractor={(item, index) => index}
+          />
+        </>
+      ) : (
           <ActivityIndicator color="#debd27" />
-        )}
-      </Container>
-    );
-  }
+      )}
+    </Container>
+  )
 }
 
-const mapStateToProps = (state) => {
-  return {
-    size: state.pokedex.length,
-  };
-};
-
-const mapDispatchToProps = (dispatch) =>
-  bindActionCreators(PokeActions, dispatch);
-
-export default connect(mapStateToProps, mapDispatchToProps)(Home);
+export default Home;

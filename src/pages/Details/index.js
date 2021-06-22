@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {Animated, ActivityIndicator} from 'react-native';
-import {bindActionCreators} from 'redux';
-import {connect} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {PanGestureHandler, State} from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as PokeActions from '../../store/modules/pokedex/actions';
@@ -37,44 +36,45 @@ const animatedEvent = Animated.event(
   {useNativeDriver: true},
 );
 
-class Details extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      pokemon: {},
-      loading: false,
-    };
-  }
-
-  async componentDidMount() {
+const Details = ({route, navigation}) => {
+  const [pokemon, setPokemon] = useState({});
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  // const amount = useSelector(state => state.pokedex.find((el) => el.name === route.params.pokemonParam.name))
+  
+  
+  useEffect(() => {
     offset = 0;
     translateY.setValue(0);
-    const {route, navigation} = this.props;
-    const {pokemon} = route.params;
-    const id = pokemon.url.split('/')[pokemon.url.split('/').length - 2];
-    navigation.setOptions({title: pokemon.name});
-    this.setState({loading: true});
-    try {
-      const response = await api.get(`/pokemon/${pokemon.name}/`);
-      this.setState({
-        pokemon: {
-          id,
-          name: pokemon.name,
-          url: pokemon.url,
+    const {pokemonParam} = route.params;
+    navigation.setOptions({title: pokemonParam.name});
+    setLoading(true);
+    
+    async function getPokemonDetails() {
+      try {
+        const response = await api.get(`/pokemon/${pokemonParam.name}/`);
+
+        setPokemon({
+          id: response.data.id,
+          name: pokemonParam.name,
+          url: pokemonParam.url,
           height: response.data.height / 10,
           weight: response.data.weight / 10,
           abilities: response.data.abilities,
           back_default: response.data.sprites.back_default,
-        },
-        loading: false,
-      });
-    } catch (error) {
-      this.setState({loading: false});
+        });
+        setLoading(false)
+      } catch (error) {
+        setLoading(false);
+      }
     }
-  }
 
-  // eslint-disable-next-line class-methods-use-this
-  handlerStateChange(event) {
+    getPokemonDetails();
+
+  }, []) 
+
+  //// eslint-disable-next-line class-methods-use-this
+  function handlerStateChange(event) {
     if (event.nativeEvent.oldState === State.ACTIVE) {
       const {translationY} = event.nativeEvent;
       offset += translationY;
@@ -83,25 +83,24 @@ class Details extends React.Component {
     }
   }
 
-  handleAdd(pokemon) {
-    const {actionAddPokemon} = this.props;
-    actionAddPokemon(pokemon);
+  function handleAdd(pokemon) {
+    const {actionAddPokemon} = PokeActions;
+    dispatch(actionAddPokemon(pokemon));
   }
 
-  render() {
-    const {pokemon, loading} = this.state;
-    const {amount, navigation} = this.props;
-    return (
-      <Container>
+  return (
+    <Container>
         {loading ? (
           <LoadContainer>
             <ActivityIndicator color="#debd27" size={36} />
           </LoadContainer>
         ) : (
           <>
-            <Amount onPress={() => navigation.navigate('pokelist')}>
-              <AmoutText>{amount}</AmoutText>
-            </Amount>
+            {/*
+              <Amount onPress={() => navigation.navigate('pokelist')}>
+                <AmoutText>{amount && amount}</AmoutText>
+              </Amount>
+            */}
             <Avatar
               style={{
                 opacity: translateY.interpolate({
@@ -125,7 +124,7 @@ class Details extends React.Component {
             />
             <PanGestureHandler
               onGestureEvent={animatedEvent}
-              onHandlerStateChange={this.handlerStateChange}>
+              onHandlerStateChange={handlerStateChange}>
               <BottomCard
                 style={{
                   transform: [
@@ -149,7 +148,7 @@ class Details extends React.Component {
                   </BottomCardHeaderItem>
                   <BottomCardHeaderItem>
                     <Bold>Altura</Bold>
-                    <Text>{pokemon.height}m</Text>
+                    <Text>{pokemon.height > 1 ? `${pokemon.height}m` : `${pokemon.height}cm` }</Text>
                   </BottomCardHeaderItem>
                 </BottomCardHeader>
                 <Bold>Habilidades</Bold>
@@ -163,9 +162,7 @@ class Details extends React.Component {
                     ))}
                 </AbilityContainer>
                 <RoundButton
-                  onPress={() =>
-                    this.handleAdd({name: pokemon.name, url: pokemon.url})
-                  }>
+                  onPress={() => handleAdd({name: pokemon.name, url: pokemon.url}) }>
                   <Icon name="add" color="#fff" size={32} />
                 </RoundButton>
                 <PokedexButton onPress={() => navigation.navigate('pokelist')}>
@@ -196,20 +193,8 @@ class Details extends React.Component {
             </PanGestureHandler>
           </>
         )}
-      </Container>
-    );
-  }
+    </Container>
+  )
 }
 
-const mapStateToProps = (state, ownProps) => {
-  const {url} = ownProps.route.params.pokemon;
-  const id = url.split('/')[url.split('/').length - 2];
-  const pokemon = state.pokedex.find((el) => el.id === id);
-  return {
-    amount: pokemon ? pokemon.amount : 0,
-  };
-};
-
-const mapDispatchToProps = (dispatch) =>
-  bindActionCreators(PokeActions, dispatch);
-export default connect(mapStateToProps, mapDispatchToProps)(Details);
+export default Details;
