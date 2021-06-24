@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/MarcosPrintes/pokeApp/master/src/assets/images/pokeapp.png?token=AF3BUVDDMXMTUSXH4YDE4A3A2R5CA">
-</div>
+# Pokeapp
 
 Projeto base feito com react native dividido em três branchs:
 
