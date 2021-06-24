@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch} from 'react-redux';
+import React from 'react';
+import { StackNavigationProp } from "@react-navigation/stack";
+import {useSelector, useDispatch} from 'react-redux';
 import {Button} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as PokedexActions from '../../store/modules/pokedex/actions';
@@ -16,16 +17,22 @@ import {
   RoundButton,
 } from './styles';
 
-const PokeList = ({navigation}) => {
-  const pokemonList = useSelector(state => state.pokedex);
+type PokelistGoBackNavigation = StackNavigationProp<any>;
+
+type Props = {
+  navigation: PokelistGoBackNavigation,
+}
+
+const PokeList:React.FC<Props> = ({navigation}) => {
+  const pokemonList = useSelector((state) => state.pokedex);
   const dispatch = useDispatch();
 
-  function handleDelete(id) {
+  function handleDelete(id: number) {
     const {actionRemovePokemon} = PokedexActions;
     dispatch(actionRemovePokemon(id));
   }
 
-  function handleUpdate(id, amount) {
+  function handleUpdate(id: number, amount: number) {
     const {actionUpdatePokemon} = PokedexActions;
     dispatch(actionUpdatePokemon(id, amount));
   }

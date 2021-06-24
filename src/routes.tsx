@@ -5,35 +5,52 @@ import Home from './pages/Home';
 import PokeList from './pages/PokeList';
 import Details from './pages/Details';
 
-const Stack = createStackNavigator();
+export type Poke = {
+  index: number|undefined|null,
+  name: string,
+  url: string,
+}
+
+export type RootStackParamList = {
+  Home: undefined,
+  Pokelist: {
+    params: any|undefined
+  },
+  Details: {
+    pokemonParam: Poke
+  }
+}
+
+const RootStack = createStackNavigator<RootStackParamList>();
 
 const Routes = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="home"
+      <RootStack.Navigator
+        initialRouteName="Home"
         screenOptions={{
           headerStyle: {
             backgroundColor: '#debd29',
           },
           headerTintColor: '#fff',
         }}>
-        <Stack.Screen
-          name="home"
+        <RootStack.Screen
+          name="Home"
           component={Home}
           options={{title: 'Pokemons'}}
         />
-        <Stack.Screen
-          name="pokelist"
+        <RootStack.Screen
+          name="Pokelist"
           component={PokeList}
           options={{title: 'Seus pokemos'}}
         />
-        <Stack.Screen
-          name="details"
+        <RootStack.Screen
+          name="Details"
+          initialParams={{ pokemonParam: {name: ''} }}
           component={Details}
           options={{title: 'Detalhes'}}
         />
-      </Stack.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 };
